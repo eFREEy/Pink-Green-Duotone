@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duotone Image Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body {
+font-family: 'Inter', sans-serif;
+}
+/* Custom styles for button transitions and focus states */
+.btn {
+transition: all 0.3s ease;
+}
+.btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn:active {
+transform: translateY(0);
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+/* Custom style for color input */
+input[type="color"] {
+-webkit-appearance: none;
+border: none;
+width: 56px;
+height: 56px;
+border-radius: 50%;
+cursor: pointer;
+padding: 0;
+overflow: hidden;
+border: 4px solid #fff;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+border: none;
+border-radius: 50%;
+}
+/* Custom styles for active and inactive tabs */
+.tab-active {
+color: #2563eb; /* text-blue-600 */
+background-color: #f3f4f6; /* bg-gray-100 */
+border-bottom: 2px solid #2563eb;
+}
+.tab-inactive {
+color: #6b7280; /* text-gray-500 */
+}
+</style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+<div class="w-full max-w-2xl mx-auto">
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+<div class="p-6 md:p-8">
+<h1 class="text-3xl font-bold text-gray-800 text-center mb-2">Duotone Image Generator</h1>
+<p class="text-gray-500 text-center mb-6">Buat gambar dengan efek duotone dan watermark unik.</p>
+</div>
+
+<!-- Canvas Container -->
+<div class="px-4 pb-4 md:px-6 md:pb-6 relative aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden">
+<!-- Canvas for displaying the duotone image -->
+<canvas id="duotoneCanvas" class="w-full h-full object-cover rounded-lg"></canvas>
+<!-- Loading indicator -->
+<div id="loadingIndicator" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+<div class="text-center">
+<svg class="h-8 w-8 text-pink-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+</svg>
+<p class="mt-2 text-gray-600">Silakan upload gambar untuk memulai.</p>
+</div>
+</div>
+</div>
+
+<!-- Controls -->
+<div class="p-6 bg-gray-50 space-y-6">
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button id="uploadBtn" class="btn w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+Upload Gambar
+</button>
+<button id="downloadBtn" class="btn w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+Download
+</button>
+<input type="file" id="imageUpload" class="hidden" accept="image/*">
+</div>
+
+<!-- Color Customization -->
+<div class="border-t pt-6">
+<h3 class="text-lg font-semibold text-gray-700 text-center mb-4">Ubah Komposisi Warna</h3>
+<div class="flex justify-around items-center gap-4">
+<div class="text-center">
+<label for="darkColorPicker" class="block text-sm font-medium text-gray-600 mb-2">Warna Gelap</label>
+<input type="color" id="darkColorPicker" value="#1b602f">
+</div>
+<button id="invertBtn" class="btn bg-gray-200 hover:bg-gray-300 p-3 rounded-full self-center mt-6">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15 21 21"/><path d="M4 4l7 7"/></svg>
+</button>
+<div class="text-center">
+<label for="lightColorPicker" class="block text-sm font-medium text-gray-600 mb-2">Warna Terang</label>
+<input type="color" id="lightColorPicker" value="#f784c5">
+</div>
+</div>
+</div>
+
+<!-- Watermark Section -->
+<div id="watermarkSection" class="border-t pt-6 space-y-4">
+<h3 class="text-lg font-semibold text-gray-700 text-center">Tambahkan Watermark</h3>
+<!-- Tabs -->
+<div class="flex border-b">
+<button id="textTab" class="py-2 px-4 text-sm font-medium text-center rounded-t-lg tab-active">Teks</button>
+<button id="imageTab" class="py-2 px-4 text-sm font-medium text-center rounded-t-lg tab-inactive">Gambar</button>
+</div>
+
+<!-- Text Watermark Controls -->
+<div id="textWatermarkControls" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label for="watermarkText" class="block text-sm font-medium text-gray-600">Teks Watermark</label>
+<input type="text" id="watermarkText" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Teks Anda...">
+</div>
+<div>
+<label for="watermarkSize" class="block text-sm font-medium text-gray-600">Ukuran Font</label>
+<input type="number" id="watermarkSize" value="48" min="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+</div>
+<div class="sm:col-span-2">
+<label for="watermarkColor" class="block text-sm font-medium text-gray-600">Warna Teks</label>
+<input type="color" id="watermarkColor" value="#ffffff" class="mt-1 w-full h-10 p-1 border border-gray-300 rounded-md">
+</div>
+</div>
+
+<!-- Image Watermark Controls -->
+<div id="imageWatermarkControls" class="hidden space-y-4">
+<button id="uploadWatermarkBtn" class="btn w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/><path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/></svg>
+Upload Gambar Watermark
+</button>
+<input type="file" id="watermarkImageUpload" class="hidden" accept="image/png, image/jpeg">
+<div>
+<label for="watermarkImageSize" class="block text-sm font-medium text-gray-600">Ukuran Gambar (% Lebar)</label>
+<input type="range" id="watermarkImageSize" min="5" max="100" step="1" value="30" class="mt-1 w-full">
+</div>
+</div>
+
+<!-- Shared Controls -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+<div>
+<label for="watermarkPosition" class="block text-sm font-medium text-gray-600">Posisi</label>
+<select id="watermarkPosition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+<option value="bottom-right">Kanan Bawah</option>
+<option value="bottom-left">Kiri Bawah</option>
+<option value="top-left">Kiri Atas</option>
+<option value="top-right">Kanan Atas</option>
+<option value="center">Tengah</option>
+</select>
+</div>
+<div>
+<label for="watermarkOpacity" class="block text-sm font-medium text-gray-600">Transparansi (Opacity)</label>
+<input type="range" id="watermarkOpacity" min="0" max="1" step="0.1" value="0.7" class="mt-1 w-full">
+</div>
+</div>
+</div>
+</div>
+
+</div>
+<!-- Hidden image element to load the source image -->
+<img id="sourceImage" class="hidden" alt="Source for Duotone">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+// --- STATE ---
+let watermarkType = 'text'; // 'text' or 'image'
+const watermarkImage = new Image();
+
+// --- DOM Element references ---
+const canvas = document.getElementById('duotoneCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const sourceImage = document.getElementById('sourceImage');
+const invertBtn = document.getElementById('invertBtn');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const uploadBtn = document.getElementById('uploadBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const imageUpload = document.getElementById('imageUpload');
+const darkColorPicker = document.getElementById('darkColorPicker');
+const lightColorPicker = document.getElementById('lightColorPicker');
+const loadingText = document.querySelector('#loadingIndicator p');
+const loadingSpinner = document.querySelector('#loadingIndicator svg');
+
+// Watermark elements
+const watermarkSection = document.getElementById('watermarkSection');
+const textTab = document.getElementById('textTab');
+const imageTab = document.getElementById('imageTab');
+
+const textWatermarkControls = document.getElementById('textWatermarkControls');
+const watermarkText = document.getElementById('watermarkText');
+const watermarkSize = document.getElementById('watermarkSize');
+const watermarkColor = document.getElementById('watermarkColor');
+
+const imageWatermarkControls = document.getElementById('imageWatermarkControls');
+const uploadWatermarkBtn = document.getElementById('uploadWatermarkBtn');
+const watermarkImageUpload = document.getElementById('watermarkImageUpload');
+const watermarkImageSize = document.getElementById('watermarkImageSize');
+
+// Shared watermark controls
+const watermarkOpacity = document.getElementById('watermarkOpacity');
+const watermarkPosition = document.getElementById('watermarkPosition');
+
+
+// --- INITIAL SETUP ---
+if (loadingSpinner) loadingSpinner.classList.remove('animate-spin');
+watermarkSection.style.display = 'none'; // Hide watermark controls initially
+downloadBtn.style.display = 'none'; // Hide download button initially
+
+// --- HELPER FUNCTIONS ---
+const hexToRgb = (hex) => {
+const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+};
+
+// --- DRAWING FUNCTIONS ---
+const drawTextWatermark = () => {
+const text = watermarkText.value;
+if (!text) return;
+
+const size = watermarkSize.value;
+const color = hexToRgb(watermarkColor.value);
+const opacity = watermarkOpacity.value;
+
+ctx.font = `bold ${size}px Inter`;
+if (color) ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+
+const position = watermarkPosition.value;
+const margin = 20;
+let x, y;
+// Position calculation logic... (same as before)
+switch(position) { /* ... same as before ... */
+case 'top-left': ctx.textAlign = 'left'; ctx.textBaseline = 'top'; x = margin; y = margin; break;
+case 'top-right': ctx.textAlign = 'right'; ctx.textBaseline = 'top'; x = canvas.width - margin; y = margin; break;
+case 'bottom-left': ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; x = margin; y = canvas.height - margin; break;
+case 'center': ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; x = canvas.width / 2; y = canvas.height / 2; break;
+default: ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; x = canvas.width - margin; y = canvas.height - margin; break;
+}
+ctx.fillText(text, x, y);
+};
+
+const drawImageWatermark = () => {
+if (!watermarkImage.complete || watermarkImage.naturalWidth === 0) return;
+
+const sizePercent = watermarkImageSize.value / 100;
+const newWidth = canvas.width * sizePercent;
+const newHeight = watermarkImage.naturalHeight * (newWidth / watermarkImage.naturalWidth);
+
+const position = watermarkPosition.value;
+const opacity = watermarkOpacity.value;
+const margin = 20;
+let x, y;
+
+switch (position) {
+case 'top-left': x = margin; y = margin; break;
+case 'top-right': x = canvas.width - newWidth - margin; y = margin; break;
+case 'bottom-left': x = margin; y = canvas.height - newHeight - margin; break;
+case 'center': x = (canvas.width - newWidth) / 2; y = (canvas.height - newHeight) / 2; break;
+default: x = canvas.width - newWidth - margin; y = canvas.height - newHeight - margin; break;
+}
+
+ctx.globalAlpha = opacity;
+ctx.drawImage(watermarkImage, x, y, newWidth, newHeight);
+ctx.globalAlpha = 1.0; // Reset global alpha
+};
+
+// --- MAIN RENDER FUNCTION ---
+const renderCanvas = () => {
+if (!sourceImage.complete || sourceImage.naturalWidth === 0) return;
+
+const darkColor = hexToRgb(darkColorPicker.value);
+const lightColor = hexToRgb(lightColorPicker.value);
+if(!darkColor || !lightColor) return;
+
+canvas.width = sourceImage.naturalWidth;
+canvas.height = sourceImage.naturalHeight;
+ctx.drawImage(sourceImage, 0, 0);
+
+const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const data = imageData.data;
+
+for (let i = 0; i < data.length; i += 4) {
+const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+const grayRatio = gray / 255;
+data[i] = darkColor.r + (lightColor.r - darkColor.r) * grayRatio;
+data[i+1] = darkColor.g + (lightColor.g - darkColor.g) * grayRatio;
+data[i+2] = darkColor.b + (lightColor.b - darkColor.b) * grayRatio;
+}
+
+ctx.putImageData(imageData, 0, 0);
+
+if (watermarkType === 'text') {
+drawTextWatermark();
+} else if (watermarkType === 'image') {
+drawImageWatermark();
+}
+
+loadingIndicator.style.display = 'none';
+watermarkSection.style.display = 'block';
+downloadBtn.style.display = 'inline-flex';
+};
+
+// --- EVENT LISTENERS ---
+sourceImage.onload = renderCanvas;
+sourceImage.onerror = () => {
+console.error("Gagal memuat gambar.");
+if(loadingText) loadingText.innerText = "Gagal memuat gambar. Coba lagi.";
+if(loadingSpinner) loadingSpinner.style.display = 'none';
+};
+
+uploadBtn.addEventListener('click', () => imageUpload.click());
+imageUpload.addEventListener('change', (event) => {
+const file = event.target.files[0];
+if (file) {
+if (loadingText) loadingText.textContent = 'Memuat gambar...';
+if (loadingSpinner) loadingSpinner.classList.add('animate-spin');
+loadingIndicator.style.display = 'flex';
+const reader = new FileReader();
+reader.onload = (e) => {
+sourceImage.src = e.target.result;
+};
+reader.readAsDataURL(file);
+}
+});
+
+downloadBtn.addEventListener('click', () => {
+const link = document.createElement('a');
+link.download = 'duotone-image.png';
+link.href = canvas.toDataURL('image/png');
+link.click();
+});
+
+invertBtn.addEventListener('click', () => {
+const tempColor = darkColorPicker.value;
+darkColorPicker.value = lightColorPicker.value;
+lightColorPicker.value = tempColor;
+renderCanvas();
+});
+
+// Color picker listeners
+darkColorPicker.addEventListener('input', renderCanvas);
+lightColorPicker.addEventListener('input', renderCanvas);
+
+// Watermark Tab listeners
+textTab.addEventListener('click', () => {
+watermarkType = 'text';
+textTab.classList.replace('tab-inactive', 'tab-active');
+imageTab.classList.replace('tab-active', 'tab-inactive');
+textWatermarkControls.style.display = 'grid';
+imageWatermarkControls.style.display = 'none';
+renderCanvas();
+});
+
+imageTab.addEventListener('click', () => {
+watermarkType = 'image';
+imageTab.classList.replace('tab-inactive', 'tab-active');
+textTab.classList.replace('tab-active', 'tab-inactive');
+imageWatermarkControls.style.display = 'block';
+textWatermarkControls.style.display = 'none';
+renderCanvas();
+});
+
+// Watermark Control listeners
+watermarkText.addEventListener('input', renderCanvas);
+watermarkSize.addEventListener('input', renderCanvas);
+watermarkColor.addEventListener('input', renderCanvas);
+watermarkOpacity.addEventListener('input', renderCanvas);
+watermarkPosition.addEventListener('change', renderCanvas);
+watermarkImageSize.addEventListener('input', renderCanvas);
+
+uploadWatermarkBtn.addEventListener('click', () => watermarkImageUpload.click());
+watermarkImageUpload.addEventListener('change', (event) => {
+const file = event.target.files[0];
+if (file) {
+const reader = new FileReader();
+reader.onload = (e) => {
+watermarkImage.src = e.target.result;
+};
+reader.readAsDataURL(file);
+}
+});
+watermarkImage.onload = renderCanvas;
+});
+</script>
+</body>
+</html>
+
